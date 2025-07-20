@@ -24,8 +24,6 @@ const NavBar = () => {
       console.error("Logout failed:", error);
     }
   }
-
-  console.log(user);
     return (
         <div className="navbar bg-base-200 shadow-sm">
   <div className="flex-1">
