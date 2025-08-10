@@ -27,7 +27,7 @@ const NavBar = () => {
     return (
         <div className="navbar bg-base-200 shadow-sm">
   <div className="flex-1">
-    <a className="btn btn-ghost text-xl">🌐 DevTinder</a>
+    <Link to="/" className="btn btn-ghost text-xl">🫰🏼 CommitHub</Link>
   </div>
   {user && <div className="flex gap-2">
     <div className="form-control">Welcome , {user.firstName}</div>
