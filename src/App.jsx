@@ -18,14 +18,16 @@ function App() {
     <Provider store={appStore}>
     <BrowserRouter basename="/">
       <Routes>
+        {/* Standalone login route */}
+        <Route path="/login" element={<Login />} />
+        
+        {/* Main app routes with NavBar and Footer */}
         <Route path="/" element={<Body />}> 
           <Route path="/" element={<Feed />} /> 
-          <Route path="/login" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/connections" element={<Connections />} />
           <Route path="/requests" element={<Requests />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
     </Provider>
