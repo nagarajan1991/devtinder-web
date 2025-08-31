@@ -21,7 +21,8 @@ const Body = () => {
       } catch (err) {
         if (err.response && err.response.status === 401) {
           // User is not authenticated, redirect to login
-          navigate("/login");
+          dispatch(addUser(null));
+      navigate("/login");
         } else {
           console.error("Error fetching user:", err);
         }
@@ -32,7 +33,12 @@ const Body = () => {
       if (!userData) {
         fetchUser();
       }
-    }, []);
+    }, [userData]);
+
+      // Show nothing while checking authentication
+  if (!userData) {
+    return null;
+  }
 
   return (
     <div>
