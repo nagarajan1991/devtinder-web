@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 const Premium = () => {
   const [isUserPremium, setIsUserPremium] = useState(false);
+  
   useEffect(() => {
     verifyPremiumUser();
   }, []);
