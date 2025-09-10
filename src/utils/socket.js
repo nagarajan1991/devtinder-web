@@ -1,10 +1,12 @@
 import io from "socket.io-client";
 import { BASE_URL } from "./constants";
 
-export const createSocketConnection = () => {
-  if (location.hostname === "localhost") {
-    return io(BASE_URL);
-  } else {
-    return io("/", { path: "/api/socket.io" });
-  }
+const createSocketConnection = () => {
+  const baseUrl = location.hostname === "localhost" ? "http://localhost:7777" : "/";
+  return io(baseUrl, {
+    withCredentials: true,
+    transports: ['websocket', 'polling']
+  });
 };
+
+export default createSocketConnection;

@@ -1,18 +1,26 @@
-import { Outlet, useNavigate} from "react-router-dom";
+import { Outlet, useNavigate, useLocation} from "react-router-dom";
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../utils/userSlice";
 
 const Body = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate(); 
+    const location = useLocation();
     const userData = useSelector((store) => store.user);
+    const hasAttemptedAuth = useRef(false);
 
     const fetchUser = async () => {
+      if (hasAttemptedAuth.current) {
+        return; // Don't attempt auth again if we already tried
+      }
+      
+      hasAttemptedAuth.current = true;
+      
       try {
         const res = await axios.get(BASE_URL + "/profile/view", {
           withCredentials: true,
@@ -22,28 +30,38 @@ const Body = () => {
         if (err.response && err.response.status === 401) {
           // User is not authenticated, redirect to login
           dispatch(addUser(null));
-      navigate("/login");
+          navigate("/login");
         } else {
-          console.error("Error fetching user:", err);
+          // For other errors, also redirect to login as a fallback
+          dispatch(addUser(null));
+          navigate("/login");
         }
       }
     };
 
     useEffect(() => {
-      if (!userData) {
+      // Only try to fetch user if we haven't attempted auth yet
+      if (!userData && !hasAttemptedAuth.current) {
         fetchUser();
       }
     }, [userData]);
 
-      // Show nothing while checking authentication
-  if (!userData) {
-    return null;
-  }
+    // Show nothing while checking authentication
+    if (!userData && !hasAttemptedAuth.current) {
+      return null;
+    }
+
+    // If user is not authenticated and we've attempted auth, show login page
+    if (!userData && hasAttemptedAuth.current) {
+      return null; // This will be handled by the redirect in fetchUser
+    }
 
   return (
-    <div>
+    <div className="min-h-screen flex flex-col">
         <NavBar/>
-        <Outlet/>
+        <main className="flex-1">
+          <Outlet/>
+        </main>
         <Footer/>
     </div>
   );

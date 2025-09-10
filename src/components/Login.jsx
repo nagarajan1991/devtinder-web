@@ -22,6 +22,8 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -38,7 +40,7 @@ const Login = () => {
       dispatch(addUser(res.data));
       return navigate("/");
     } catch (err) {
-      setError(err?.response?.data || "Something went wrong");
+      setError(err?.response?.data?.message || err?.response?.data || "Something went wrong");
     }
   };
 
@@ -66,7 +68,7 @@ const Login = () => {
           lastName, 
           emailId, 
           password,
-          photoUrl,
+          photoUrl: photoUrl.trim() || undefined, // Send undefined if empty to use default
           age: parseInt(age) || undefined,
           gender,
           skills: skillsArray,
@@ -75,20 +77,22 @@ const Login = () => {
         { withCredentials: true }
       );
       
-      // Show success toast
+      // Show success message
+      setError(""); // Clear any existing errors
+      setSuccessMessage("Account created successfully! Please check your email and click the verification link before logging in.");
       setShowSuccessToast(true);
       
       // Clear form and switch to login
       clearForm();
       setIsLoginForm(true);
       
-      // Hide toast after 5 seconds
+      // Hide toast after 8 seconds (longer for verification message)
       setTimeout(() => {
         setShowSuccessToast(false);
-      }, 5000);
+      }, 8000);
       
     } catch (err) {
-      setError(err?.response?.data || "Something went wrong");
+      setError(err?.response?.data?.message || err?.response?.data || "Something went wrong");
     }
   };
 
@@ -109,6 +113,30 @@ const Login = () => {
   const toggleForm = () => {
     setIsLoginForm(!isLoginForm);
     clearForm();
+  };
+
+  const resendVerification = async () => {
+    if (!emailId.trim()) {
+      setError("Please enter your email address first");
+      return;
+    }
+
+    try {
+      setIsResendingVerification(true);
+      const response = await axios.post(`${BASE_URL}/resend-verification`, {
+        emailId: emailId
+      });
+      setError(""); // Clear error
+      setSuccessMessage("Verification email sent! Please check your email and click the verification link.");
+      setShowSuccessToast(true);
+      setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 5000);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to resend verification email");
+    } finally {
+      setIsResendingVerification(false);
+    }
   };
 
   return (
@@ -169,6 +197,17 @@ const Login = () => {
                     </button>
                   </div>
                 </label>
+                
+                {/* Forgot Password Link */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    className="link link-primary text-sm hover:link-primary-focus transition-colors"
+                    onClick={() => navigate('/forgot-password')}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
               </div>
             ) : (
               // Signup Form - Clean grid layout
@@ -251,9 +290,19 @@ const Login = () => {
                     />
                   </label>
                   
+                  {/* Email verification note */}
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <span className="text-blue-600 text-sm">📧</span>
+                      <div className="text-xs text-blue-800">
+                        <strong>Important:</strong> A valid email address is required. You'll receive a verification email and must verify your account before you can log in.
+                      </div>
+                    </div>
+                  </div>
+                  
                   <label className="form-control">
                     <div className="label">
-                      <span className="label-text">Photo URL</span>
+                      <span className="label-text">Profile Photo URL (Optional)</span>
                     </div>
                     <input
                       type="url"
@@ -262,6 +311,15 @@ const Login = () => {
                       onChange={(e) => setPhotoUrl(e.target.value)}
                       placeholder="https://example.com/photo.jpg"
                     />
+                    <div className="label">
+                      <span className="label-text-alt text-xs text-base-content/70">
+                        💡 <strong>How to get an image URL:</strong><br/>
+                        1. Go to Google Images and search for a profile picture<br/>
+                        2. Right-click on an image and select "Copy image address"<br/>
+                        3. Paste the URL here<br/>
+                        <span className="text-primary">Leave empty to use default avatar</span>
+                      </span>
+                    </div>
                   </label>
                 </div>
 
@@ -370,6 +428,26 @@ const Login = () => {
             
             <p className="text-red-500 text-center">{error}</p>
             
+            {/* Show resend verification button if error is about email verification */}
+            {error && error.includes("Email not verified") && isLoginForm && (
+              <div className="text-center">
+                <button
+                  className="btn btn-outline btn-sm"
+                  onClick={resendVerification}
+                  disabled={isResendingVerification}
+                >
+                  {isResendingVerification ? (
+                    <>
+                      <span className="loading loading-spinner loading-xs"></span>
+                      Sending...
+                    </>
+                  ) : (
+                    "Resend Verification Email"
+                  )}
+                </button>
+              </div>
+            )}
+            
             <div className="card-actions justify-center mt-6">
               <button
                 className="btn btn-primary w-full"
@@ -402,8 +480,8 @@ const Login = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="font-bold">Account Created Successfully!</h3>
-              <div className="text-xs">You can now login with your email and password.</div>
+              <h3 className="font-bold">Success!</h3>
+              <div className="text-xs">{successMessage}</div>
             </div>
           </div>
         </div>
