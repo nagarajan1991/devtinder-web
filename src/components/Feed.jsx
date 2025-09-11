@@ -69,11 +69,24 @@ const Feed = () => {
       console.log('Custom event: updateLimits triggered');
       checkUserLimits();
     };
+    const handleFeedUpdate = async () => {
+      console.log('Custom event: feedUpdate triggered');
+      // Auto-refresh feed when user makes a decision
+      await Promise.all([
+        getFeed(),
+        getUserCounts(),
+        checkUserLimits()
+      ]);
+    };
+    
     window.addEventListener('updateCounts', handleUpdateCounts);
     window.addEventListener('updateLimits', handleUpdateLimits);
+    window.addEventListener('feedUpdate', handleFeedUpdate);
+    
     return () => {
       window.removeEventListener('updateCounts', handleUpdateCounts);
       window.removeEventListener('updateLimits', handleUpdateLimits);
+      window.removeEventListener('feedUpdate', handleFeedUpdate);
     };
   }, []);
 
@@ -162,6 +175,33 @@ const Feed = () => {
       window.removeEventListener('showPremiumModal', handlePremiumModal);
     };
   }, []);
+
+  // Automatic feed refresh functionality
+  useEffect(() => {
+    if (!user) return;
+
+    // Auto-refresh feed every 30 seconds when feed is empty or stale
+    const autoRefreshInterval = setInterval(async () => {
+      try {
+        // Only auto-refresh if we don't have feed data or if it's been a while
+        if (!feed || feed.length === 0) {
+          console.log('Auto-refreshing feed - no users available');
+          await Promise.all([
+            getFeed(),
+            getUserCounts(),
+            checkUserLimits()
+          ]);
+        }
+      } catch (error) {
+        console.error('Error during auto-refresh:', error);
+      }
+    }, 30000); // 30 seconds
+
+    // Cleanup interval on unmount
+    return () => {
+      clearInterval(autoRefreshInterval);
+    };
+  }, [user, feed]);
   // Show loading state
   if (isLoading) {
     return (
@@ -194,24 +234,7 @@ const Feed = () => {
             <h1 className="text-3xl font-bold text-base-content mb-3">
               No New Users Found
             </h1>
-            <p className="text-base-content opacity-70 mb-6">You've seen all available users! Check back later for new connections.</p>
-            <button 
-              onClick={async () => {
-                setIsLoading(true);
-                dispatch(addFeed(null));
-                await Promise.all([
-                  getFeed(),
-                  getUserCounts(),
-                  checkUserLimits()
-                ]);
-              }} 
-              className="btn btn-primary"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Refresh Feed
-            </button>
+            <p className="text-base-content opacity-70 mb-6">You've seen all available users! We'll automatically check for new connections.</p>
           </div>
         </div>
       </div>

@@ -73,6 +73,7 @@ const UserCard = ({ user, showActions = true }) => {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('updateCounts'));
         window.dispatchEvent(new CustomEvent('updateLimits'));
+        window.dispatchEvent(new CustomEvent('feedUpdate'));
       }, 100);
     } catch (err) {
       console.error("Error sending request:", err);
@@ -83,6 +84,7 @@ const UserCard = ({ user, showActions = true }) => {
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('updateCounts'));
         window.dispatchEvent(new CustomEvent('updateLimits'));
+        window.dispatchEvent(new CustomEvent('feedUpdate'));
       }, 100);
     }
   };
