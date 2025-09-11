@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import { addUser } from "../utils/userSlice";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
@@ -7,6 +8,8 @@ import appStore from "../utils/appStore";
 
 const AuthProvider = ({ children }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location = useLocation();
   const userData = useSelector((store) => store.user);
   const hasAttemptedAuth = useRef(false);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -27,6 +30,14 @@ const AuthProvider = ({ children }) => {
     } catch (err) {
       // Clear any existing user data
       dispatch(addUser(null));
+      
+      // Redirect to login if not already on login page and not on other auth pages
+      if (location.pathname !== "/login" && 
+          location.pathname !== "/forgot-password" && 
+          location.pathname !== "/reset-password" && 
+          location.pathname !== "/verify-email") {
+        navigate("/login");
+      }
     } finally {
       setIsAuthLoading(false);
     }
