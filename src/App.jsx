@@ -27,9 +27,9 @@ function App() {
     <>
     <ThemeProvider>
       <Provider store={appStore}>
-        <AuthProvider>
-          <UserStatusProvider>
-            <BrowserRouter basename="/">
+        <BrowserRouter basename="/">
+          <AuthProvider>
+            <UserStatusProvider>
               <MembershipStatus />
               <Routes>
                 {/* Standalone auth routes */}
@@ -49,9 +49,9 @@ function App() {
                   <Route path="/chat/:targetUserId" element={<Chat />} />
                 </Route>
               </Routes>
-            </BrowserRouter>
-          </UserStatusProvider>
-        </AuthProvider>
+            </UserStatusProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </Provider>
     </ThemeProvider>
       </>
