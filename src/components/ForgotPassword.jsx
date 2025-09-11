@@ -18,7 +18,7 @@ const ForgotPassword = () => {
     setMessage("");
 
     try {
-      const response = await axios.post(BASE_URL + "/forgot-password", {
+      const response = await axios.post(BASE_URL + "/auth/forgot-password", {
         emailId: emailId.trim(),
       });
 

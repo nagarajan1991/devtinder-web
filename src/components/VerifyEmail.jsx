@@ -33,7 +33,7 @@ const VerifyEmail = () => {
       const minLoadingTime = 5000; // 5 seconds minimum loading
       const startTime = Date.now();
       
-      const response = await axios.get(`${BASE_URL}/verify-email?token=${token}`);
+      const response = await axios.get(`${BASE_URL}/auth/verify-email?token=${token}`);
       
       // Ensure minimum loading time has passed
       const elapsedTime = Date.now() - startTime;
@@ -82,7 +82,7 @@ const VerifyEmail = () => {
 
     try {
       setIsResending(true);
-      const response = await axios.post(`${BASE_URL}/resend-verification`, {
+      const response = await axios.post(`${BASE_URL}/auth/resend-verification`, {
         emailId: email
       });
       setMessage(response.data.message);

@@ -19,7 +19,7 @@ const NavBar = () => {
         detailsElement.removeAttribute('open');
       }
       await axios.post(
-        BASE_URL + "/logout", 
+        BASE_URL + "/auth/logout", 
         {},
         {withCredentials:true}
       );
