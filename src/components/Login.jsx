@@ -24,8 +24,35 @@ const Login = () => {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [imagePreviewError, setImagePreviewError] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  // Handle photo URL change with preview
+  const handlePhotoUrlChange = (url) => {
+    setPhotoUrl(url);
+    setImagePreviewError(false);
+    
+    if (url && url.trim()) {
+      setIsImageLoading(true);
+      setImagePreviewError(false);
+    } else {
+      setIsImageLoading(false);
+    }
+  };
+
+  // Handle image load success
+  const handleImageLoad = () => {
+    setIsImageLoading(false);
+    setImagePreviewError(false);
+  };
+
+  // Handle image load error
+  const handleImageError = () => {
+    setIsImageLoading(false);
+    setImagePreviewError(true);
+  };
 
   const handleLogin = async () => {
     try {
@@ -57,7 +84,53 @@ const Login = () => {
       return;
     }
 
+    // Validate age constraints
+    if (age && (isNaN(age) || age < 1 || age >= 100 || !Number.isInteger(Number(age)))) {
+      setError("Age must be a whole number between 1 and 99");
+      return;
+    }
+
+    // Image validation function
+    const validateImageUrl = (url) => {
+      return new Promise((resolve, reject) => {
+        if (!url || !url.trim()) {
+          // No URL provided, use default avatar
+          resolve(true);
+          return;
+        }
+
+        const img = new Image();
+        img.onload = () => {
+          // Image loads successfully
+          resolve(true);
+        };
+        img.onerror = () => {
+          // Image fails to load
+          reject(new Error("The provided image URL is invalid or cannot be accessed. Please use a different URL or leave it empty to use the default avatar."));
+        };
+        
+        // Set timeout for image loading (5 seconds)
+        const timeout = setTimeout(() => {
+          reject(new Error("Image loading timed out. Please use a different URL or leave it empty to use the default avatar."));
+        }, 5000);
+
+        img.onload = () => {
+          clearTimeout(timeout);
+          resolve(true);
+        };
+        img.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error("The provided image URL is invalid or cannot be accessed. Please use a different URL or leave it empty to use the default avatar."));
+        };
+
+        img.src = url;
+      });
+    };
+
     try {
+      // Validate image URL before proceeding
+      await validateImageUrl(photoUrl);
+
       // Convert skills string to array (comma-separated)
       const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
       
@@ -92,7 +165,7 @@ const Login = () => {
       }, 8000);
       
     } catch (err) {
-      setError(err?.response?.data?.message || err?.response?.data || "Something went wrong");
+      setError(err?.message || err?.response?.data?.message || err?.response?.data || "Something went wrong");
     }
   };
 
@@ -251,10 +324,17 @@ const Login = () => {
                       type="number"
                       value={age}
                       className="input input-bordered"
-                      onChange={(e) => setAge(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Only allow whole numbers between 1 and 99
+                        if (value === '' || (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) < 100)) {
+                          setAge(value);
+                        }
+                      }}
                       placeholder="25"
                       min="1"
-                      max="120"
+                      max="99"
+                      step="1"
                     />
                   </label>
                   
@@ -300,41 +380,89 @@ const Login = () => {
                     </div>
                   </div>
                   
-                  <label className="form-control">
+                  
+                  <div className="form-control">
                     <div className="label">
                       <span className="label-text">Profile Photo URL (Optional)</span>
                     </div>
-                    <input
-                      type="url"
-                      value={photoUrl}
-                      className="input input-bordered"
-                      onChange={(e) => setPhotoUrl(e.target.value)}
-                      placeholder="https://example.com/photo.jpg"
-                    />
-                    <div className="label">
-                      <span className="label-text-alt text-xs text-base-content/70">
-                        💡 <strong>How to get an image URL:</strong><br/>
-                        1. Go to Google Images and search for a profile picture<br/>
-                        2. Right-click on an image and select "Copy image address"<br/>
-                        3. Paste the URL here<br/>
-                        <span className="text-primary">Leave empty to use default avatar</span>
-                      </span>
+                    
+                    {/* Photo URL Input and Preview Side by Side */}
+                    <div className="flex gap-4 items-start">
+                      {/* Input Field */}
+                      <div className="flex-1">
+                        <input
+                          type="url"
+                          value={photoUrl}
+                          className="input input-bordered w-full"
+                          onChange={(e) => handlePhotoUrlChange(e.target.value)}
+                          placeholder="https://example.com/photo.jpg"
+                        />
+                        <div className="label mt-2">
+                          <span className="label-text-alt text-xs text-base-content/70">
+                            💡 <strong>How to get an image URL:</strong><br/>
+                            1. Go to Google Images and search for a profile picture<br/>
+                            2. Right-click on an image and select "Copy image address"<br/>
+                            3. Paste the URL here<br/>
+                            <span className="text-primary">Leave empty to use default avatar</span>
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Profile Preview - Right Side */}
+                      <div className="flex flex-col items-center">
+                        <div className="text-xs text-base-content/70 mb-2">Preview:</div>
+                        <div className="relative w-20 h-20 border-2 border-base-300 rounded-full overflow-hidden bg-base-200 flex items-center justify-center shadow-lg">
+                          {isImageLoading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-base-200 rounded-full">
+                              <div className="loading loading-spinner loading-sm"></div>
+                            </div>
+                          )}
+                          {imagePreviewError ? (
+                            <div className="flex flex-col items-center justify-center text-xs text-error">
+                              <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                              </svg>
+                              <span className="text-center">Invalid</span>
+                            </div>
+                          ) : photoUrl && photoUrl.trim() ? (
+                            <img
+                              src={photoUrl}
+                              alt="Profile preview"
+                              className="w-full h-full object-cover rounded-full"
+                              onLoad={handleImageLoad}
+                              onError={handleImageError}
+                              style={{ display: isImageLoading ? 'none' : 'block' }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-primary via-secondary to-accent rounded-full flex items-center justify-center">
+                              <span className="text-white font-bold text-lg">
+                                {firstName && lastName ? `${firstName.charAt(0)}${lastName.charAt(0)}` : '👤'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-base-content/60 mt-1 text-center">
+                          {imagePreviewError ? 'Try different URL' : 
+                           photoUrl && photoUrl.trim() ? 'Custom photo' : 
+                           firstName && lastName ? 'Your initials' : 'Default avatar'}
+                        </div>
+                      </div>
                     </div>
-                  </label>
+                  </div>
                 </div>
 
                 {/* Skills and About Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="form-control">
                     <div className="label">
-                      <span className="label-text">Skills (comma-separated)</span>
+                      <span className="label-text">Skills & Hobby (comma-separated)</span>
                     </div>
                     <input
                       type="text"
                       value={skills}
                       className="input input-bordered"
                       onChange={(e) => setSkills(e.target.value)}
-                      placeholder="JavaScript, React, Node.js"
+                      placeholder="Tech, Art, Music, Sports..."
                     />
                   </label>
                   
