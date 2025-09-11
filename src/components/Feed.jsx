@@ -5,23 +5,29 @@ import { addFeed } from "../utils/feedSlice";
 import { useEffect, useState } from "react";
 import UserCard from "./UserCard";
 import { useNavigate } from "react-router-dom";
+import createSocketConnection from "../utils/socket";
 
 const Feed = () => {
   const feed = useSelector((store) => store.feed);
+  const user = useSelector((store) => store.user);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userLimits, setUserLimits] = useState(null);
   const [userCounts, setUserCounts] = useState({ availableToConnect: 0, onlineCount: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
   const getFeed = async () => {
     try {
+      setIsLoading(true);
       const res = await axios.get(BASE_URL + "/feed", {
         withCredentials: true,
       });
       dispatch(addFeed(res?.data?.data));
     } catch (err) {
       console.error("Error fetching feed:", err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -46,6 +52,7 @@ const Feed = () => {
       const res = await axios.get(BASE_URL + "/user/counts", {
         withCredentials: true,
       });
+      console.log('Fetched user counts from API:', res.data);
       setUserCounts(res.data);
     } catch (err) {
       console.error("Error fetching user counts:", err);
@@ -55,9 +62,11 @@ const Feed = () => {
   // Create custom event handlers for updating counts and limits
   useEffect(() => {
     const handleUpdateCounts = () => {
+      console.log('Custom event: updateCounts triggered');
       getUserCounts();
     };
     const handleUpdateLimits = () => {
+      console.log('Custom event: updateLimits triggered');
       checkUserLimits();
     };
     window.addEventListener('updateCounts', handleUpdateCounts);
@@ -68,10 +77,80 @@ const Feed = () => {
     };
   }, []);
 
+  // Real-time Socket.IO event listeners for online status updates
   useEffect(() => {
-    getFeed();
-    checkUserLimits();
-    getUserCounts();
+    if (!user) return;
+
+    const socket = createSocketConnection();
+    
+    // Listen for user online events
+    socket.on('userOnline', (userId) => {
+      console.log('User came online:', userId);
+      // Update online count when a user comes online
+      setUserCounts(prev => {
+        const newCount = prev.onlineCount + 1;
+        console.log('Updating online count:', prev.onlineCount, '->', newCount);
+        return {
+          ...prev,
+          onlineCount: newCount
+        };
+      });
+    });
+
+    // Listen for user offline events
+    socket.on('userOffline', (userId) => {
+      console.log('User went offline:', userId);
+      // Update online count when a user goes offline
+      setUserCounts(prev => {
+        const newCount = Math.max(0, prev.onlineCount - 1);
+        console.log('Updating online count:', prev.onlineCount, '->', newCount);
+        return {
+          ...prev,
+          onlineCount: newCount
+        };
+      });
+    });
+
+    // Listen for initial online users list
+    socket.on('onlineUsers', (users) => {
+      console.log('Received online users list:', users);
+      setUserCounts(prev => ({
+        ...prev,
+        onlineCount: users.length
+      }));
+    });
+
+    // Cleanup
+    return () => {
+      socket.off('userOnline');
+      socket.off('userOffline');
+      socket.off('onlineUsers');
+      socket.disconnect();
+    };
+  }, [user]);
+
+  useEffect(() => {
+    const initializeFeed = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch feed and limits first
+        await Promise.all([
+          getFeed(),
+          checkUserLimits()
+        ]);
+        
+        // Fetch user counts after a small delay to let Socket.IO initialize
+        setTimeout(() => {
+          getUserCounts();
+        }, 1000);
+      } catch (error) {
+        console.error("Error initializing feed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeFeed();
 
     // Listen for premium modal event
     const handlePremiumModal = () => {
@@ -83,9 +162,26 @@ const Feed = () => {
       window.removeEventListener('showPremiumModal', handlePremiumModal);
     };
   }, []);
-  if (!feed) return;
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-full py-8 bg-base-200">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex flex-col items-center justify-center h-full text-center py-20">
+            <div className="w-16 h-16 mx-auto mb-6 bg-base-300 rounded-full flex items-center justify-center animate-spin">
+              <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-semibold text-base-content mb-2">Loading Feed...</h2>
+            <p className="text-base-content opacity-70">Finding new connections for you</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  if (feed.length <= 0)
+  if (!feed || feed.length <= 0)
     return (
       <div className="min-h-full py-8 bg-base-200">
         <div className="max-w-2xl mx-auto px-4">
@@ -100,10 +196,14 @@ const Feed = () => {
             </h1>
             <p className="text-base-content opacity-70 mb-6">You've seen all available users! Check back later for new connections.</p>
             <button 
-              onClick={() => {
+              onClick={async () => {
+                setIsLoading(true);
                 dispatch(addFeed(null));
-                getFeed();
-                getUserCounts();
+                await Promise.all([
+                  getFeed(),
+                  getUserCounts(),
+                  checkUserLimits()
+                ]);
               }} 
               className="btn btn-primary"
             >
