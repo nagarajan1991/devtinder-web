@@ -14,6 +14,7 @@ import Chat from "./components/Chat";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import VerifyEmail from "./components/VerifyEmail";
+import ChangePassword from "./components/ChangePassword";
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserStatusProvider } from './contexts/UserStatusContext';
 import MembershipStatus from './components/MembershipStatus';
@@ -34,6 +35,7 @@ function App() {
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route path="/change-password" element={<ChangePassword />} />
                 
                 {/* Main app routes with NavBar and Footer */}
                 <Route path="/" element={<Body />}> 

@@ -14,14 +14,65 @@ const EditProfile = ({ user }) => {
    user.gender ? String(user.gender).toLowerCase() : ""
   );
   const [about, setAbout] = useState(user.about || "");
+  const [skills, setSkills] = useState(user.skills ? user.skills.join(', ') : "");
   const [error, setError] = useState("");
   const dispatch = useDispatch();
   const [showToast, setShowToast] = useState(false);
 
+  // Image validation function
+  const validateImageUrl = (url) => {
+    return new Promise((resolve, reject) => {
+      if (!url || !url.trim()) {
+        // No URL provided, use default avatar
+        resolve(true);
+        return;
+      }
+
+      const img = new Image();
+      img.onload = () => {
+        // Image loads successfully
+        resolve(true);
+      };
+      img.onerror = () => {
+        // Image fails to load
+        reject(new Error("The provided image URL is invalid or cannot be accessed. Please use a different URL or leave it empty to use the default avatar."));
+      };
+      
+      // Set timeout for image loading (5 seconds)
+      const timeout = setTimeout(() => {
+        reject(new Error("Image loading timed out. Please use a different URL or leave it empty to use the default avatar."));
+      }, 5000);
+
+      img.onload = () => {
+        clearTimeout(timeout);
+        resolve(true);
+      };
+      img.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error("The provided image URL is invalid or cannot be accessed. Please use a different URL or leave it empty to use the default avatar."));
+      };
+
+      img.src = url;
+    });
+  };
+
   const saveProfile = async () => {
     //Clear Errors
     setError("");
+    
+    // Validate age constraints
+    if (age && (isNaN(age) || age < 1 || age >= 100 || !Number.isInteger(Number(age)))) {
+      setError("Age must be a whole number between 1 and 99");
+      return;
+    }
+
     try {
+      // Validate image URL before proceeding
+      await validateImageUrl(photoUrl);
+
+      // Convert skills string to array (comma-separated)
+      const skillsArray = skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0);
+      
       const res = await axios.patch(
         BASE_URL + "/profile/edit",
         {
@@ -31,6 +82,7 @@ const EditProfile = ({ user }) => {
           age,
           gender,
           about,
+          skills: skillsArray,
         },
         { withCredentials: true }
       );
@@ -40,9 +92,10 @@ const EditProfile = ({ user }) => {
         setShowToast(false);
       }, 3000);
     } catch (err) {
-      setError(err.response.data);
+      setError(err?.message || err.response?.data?.message || err.response?.data || "Something went wrong");
     }
   };
+
 
   return (
     <>
@@ -113,22 +166,7 @@ const EditProfile = ({ user }) => {
                         <span className="text-primary">Leave empty to use default avatar</span>
                       </span>
                     </div>
-                    {/* Image Preview */}
-                    <div className="mt-2">
-                      <div className="text-xs text-base-content/60 mb-1">Preview:</div>
-                      <div className="avatar">
-                        <div className="w-16 h-16 rounded-full">
-                          <img 
-                            src={photoUrl || "https://geographyandyou.com/images/user-profile.png"} 
-                            alt="Profile preview" 
-                            className="rounded-full object-cover"
-                            onError={(e) => {
-                              e.target.src = "https://geographyandyou.com/images/user-profile.png";
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
+
                   </div>
 
                   {/* Age and Gender */}
@@ -141,10 +179,17 @@ const EditProfile = ({ user }) => {
                         type="number"
                         value={age}
                         className="input input-bordered w-full"
-                        onChange={(e) => setAge(e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Only allow whole numbers between 1 and 99
+                          if (value === '' || (Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) < 100)) {
+                            setAge(value);
+                          }
+                        }}
                         placeholder="Your age"
-                        min="18"
-                        max="100"
+                        min="1"
+                        max="99"
+                        step="1"
                       />
                     </div>
                     <div className="form-control">
@@ -177,6 +222,25 @@ const EditProfile = ({ user }) => {
                     />
                   </div>
 
+                  {/* Skills Section */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Skills & Hobbies (comma-separated)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={skills}
+                      className="input input-bordered w-full"
+                      onChange={(e) => setSkills(e.target.value)}
+                      placeholder="Tech, Art, Music, Sports..."
+                    />
+                    <div className="label">
+                      <span className="label-text-alt text-xs text-base-content/70">
+                        💡 Separate multiple skills and hobbies with commas
+                      </span>
+                    </div>
+                  </div>
+
                   {/* Error Message */}
                   {error && (
                     <div className="alert alert-error">
@@ -203,7 +267,7 @@ const EditProfile = ({ user }) => {
                 <h2 className="text-xl font-semibold mb-4">Preview</h2>
                 <div className="flex justify-center">
                   <UserCard
-                    user={{ firstName, lastName, photoUrl, age, gender, about }}
+                    user={{ firstName, lastName, photoUrl, age, gender, about, skills: skills.split(',').map(skill => skill.trim()).filter(skill => skill.length > 0) }}
                     showActions={false}
                   />
                 </div>
@@ -214,8 +278,11 @@ const EditProfile = ({ user }) => {
       </div>
       
       {showToast && (
-        <div className="toast toast-top toast-center">
+        <div className="toast toast-top toast-center z-50">
           <div className="alert alert-success">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             <span>Profile saved successfully!</span>
           </div>
         </div>
