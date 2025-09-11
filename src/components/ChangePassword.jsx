@@ -2,6 +2,8 @@ import { useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "../utils/constants";
 import NavBar from "./NavBar";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -13,6 +15,7 @@ const ChangePassword = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const handleChangePassword = async () => {
     setError("");
@@ -44,6 +47,11 @@ const ChangePassword = () => {
       
       setSuccess(true);
       setError("");
+      
+      // Update user data in Redux store
+      if (res.data.user) {
+        dispatch(addUser(res.data.user));
+      }
       
       // Clear password fields
       setCurrentPassword("");
