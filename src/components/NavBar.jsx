@@ -52,7 +52,7 @@ const NavBar = () => {
       </div>
 
       {/* Hobby project - Always visible in navbar */}
-      <div className="navbar-center hidden sm:block">
+      <div className="navbar-center flex-1 flex justify-center">
         <div className="text-[10px] sm:text-xs whitespace-nowrap py-1 px-2 rounded-lg bg-base-200/50 backdrop-blur shadow-sm border border-base-300/50">
           <span className="text-base-content/60">Hobby project by</span>
           <a
@@ -76,8 +76,8 @@ const NavBar = () => {
         </div>
       </div>
 
-      {user && (
-        <div className="navbar-end">
+      <div className="navbar-end">
+        {user ? (
           <div className="flex items-center gap-1 sm:gap-2 md:gap-4">
             {/* Theme Toggle */}
             <button
@@ -245,8 +245,10 @@ const NavBar = () => {
               </ul>
             </details>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="w-8 h-8"></div>
+        )}
+      </div>
     </div>
   );
 };
