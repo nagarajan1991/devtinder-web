@@ -148,8 +148,12 @@ const ChangePassword = () => {
                     </button>
                   </div>
                   <div className="label">
-                    <span className="label-text-alt text-xs text-base-content/70">
-                      Password must be at least 8 characters with uppercase, lowercase, number, and special character
+                    <span className="label-text-alt text-xs text-base-content/70 leading-relaxed">
+                      Password must be at least 8 characters with:<br/>
+                      • Uppercase letter<br/>
+                      • Lowercase letter<br/>
+                      • Number<br/>
+                      • Special character
                     </span>
                   </div>
                 </div>
