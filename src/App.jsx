@@ -17,6 +17,7 @@ import VerifyEmail from "./components/VerifyEmail";
 import ChangePassword from "./components/ChangePassword";
 import { ThemeProvider } from './contexts/ThemeContext';
 import { UserStatusProvider } from './contexts/UserStatusContext';
+import AuthProvider from './contexts/AuthProvider';
 import MembershipStatus from './components/MembershipStatus';
 
 function App() {
@@ -26,10 +27,11 @@ function App() {
     <>
     <ThemeProvider>
       <Provider store={appStore}>
-        <UserStatusProvider>
-          <BrowserRouter basename="/">
-            <MembershipStatus />
-            <Routes>
+        <AuthProvider>
+          <UserStatusProvider>
+            <BrowserRouter basename="/">
+              <MembershipStatus />
+              <Routes>
                 {/* Standalone auth routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -47,8 +49,9 @@ function App() {
                   <Route path="/chat/:targetUserId" element={<Chat />} />
                 </Route>
               </Routes>
-          </BrowserRouter>
-        </UserStatusProvider>
+            </BrowserRouter>
+          </UserStatusProvider>
+        </AuthProvider>
       </Provider>
     </ThemeProvider>
       </>

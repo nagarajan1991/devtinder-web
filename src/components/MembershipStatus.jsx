@@ -8,6 +8,7 @@ const MembershipStatus = () => {
   const [isLoading, setIsLoading] = useState(true);
   const user = useSelector(store => store.user);
 
+
   // Function to check membership status
   const checkMembership = async () => {
     if (!user) {

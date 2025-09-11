@@ -52,7 +52,6 @@ const Feed = () => {
       const res = await axios.get(BASE_URL + "/user/counts", {
         withCredentials: true,
       });
-      console.log('Fetched user counts from API:', res.data);
       setUserCounts(res.data);
     } catch (err) {
       console.error("Error fetching user counts:", err);
@@ -62,15 +61,12 @@ const Feed = () => {
   // Create custom event handlers for updating counts and limits
   useEffect(() => {
     const handleUpdateCounts = () => {
-      console.log('Custom event: updateCounts triggered');
       getUserCounts();
     };
     const handleUpdateLimits = () => {
-      console.log('Custom event: updateLimits triggered');
       checkUserLimits();
     };
     const handleFeedUpdate = async () => {
-      console.log('Custom event: feedUpdate triggered');
       // Auto-refresh feed when user makes a decision
       await Promise.all([
         getFeed(),
@@ -98,11 +94,9 @@ const Feed = () => {
     
     // Listen for user online events
     socket.on('userOnline', (userId) => {
-      console.log('User came online:', userId);
       // Update online count when a user comes online
       setUserCounts(prev => {
         const newCount = prev.onlineCount + 1;
-        console.log('Updating online count:', prev.onlineCount, '->', newCount);
         return {
           ...prev,
           onlineCount: newCount
@@ -112,11 +106,9 @@ const Feed = () => {
 
     // Listen for user offline events
     socket.on('userOffline', (userId) => {
-      console.log('User went offline:', userId);
       // Update online count when a user goes offline
       setUserCounts(prev => {
         const newCount = Math.max(0, prev.onlineCount - 1);
-        console.log('Updating online count:', prev.onlineCount, '->', newCount);
         return {
           ...prev,
           onlineCount: newCount
@@ -126,7 +118,6 @@ const Feed = () => {
 
     // Listen for initial online users list
     socket.on('onlineUsers', (users) => {
-      console.log('Received online users list:', users);
       setUserCounts(prev => ({
         ...prev,
         onlineCount: users.length
@@ -185,7 +176,6 @@ const Feed = () => {
       try {
         // Only auto-refresh if we don't have feed data or if it's been a while
         if (!feed || feed.length === 0) {
-          console.log('Auto-refreshing feed - no users available');
           await Promise.all([
             getFeed(),
             getUserCounts(),

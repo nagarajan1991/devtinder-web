@@ -12,6 +12,7 @@ const NavBar = () => {
   const { theme, toggleTheme, isDark } = useTheme();
 
 
+
   const handleLogout = async() => {
     try {
       const detailsElement = document.querySelector('.dropdown-end');
@@ -135,14 +136,46 @@ const NavBar = () => {
             <details className="dropdown dropdown-end">
               <summary className="btn btn-ghost btn-circle avatar hover:shadow-md p-0.5">
                 <div className="w-8 h-8 md:w-10 md:h-10 rounded-full ring-2 ring-primary/20 hover:ring-primary/40">
-                  <img alt={`${user.firstName} ${user.lastName}`} src={user.photoUrl} className="w-full h-full object-cover rounded-full" />
+                  {user.photoUrl && user.photoUrl.trim() ? (
+                    <img 
+                      alt={`${user.firstName} ${user.lastName}`} 
+                      src={user.photoUrl} 
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className="w-full h-full bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-sm"
+                    style={{ display: user.photoUrl && user.photoUrl.trim() ? 'none' : 'flex' }}
+                  >
+                    {user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                  </div>
                 </div>
               </summary>
               <ul className="menu menu-sm dropdown-content mt-3 z-[1] p-3 shadow-xl bg-base-100 rounded-box w-64 border border-base-300">
                 <li className="menu-title mb-2">
                   <div className="flex items-center gap-3 p-2">
                     <div className="w-8 h-8 rounded-full ring-2 ring-primary/20 flex-shrink-0">
-                      <img alt={`${user.firstName} ${user.lastName}`} src={user.photoUrl} className="w-full h-full object-cover rounded-full" />
+                      {user.photoUrl && user.photoUrl.trim() ? (
+                        <img 
+                          alt={`${user.firstName} ${user.lastName}`} 
+                          src={user.photoUrl} 
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                      ) : null}
+                      <div 
+                        className="w-full h-full bg-primary/20 flex items-center justify-center rounded-full text-primary font-semibold text-xs"
+                        style={{ display: user.photoUrl && user.photoUrl.trim() ? 'none' : 'flex' }}
+                      >
+                        {user.firstName ? user.firstName.charAt(0).toUpperCase() : 'U'}
+                      </div>
                     </div>
                     <div className="flex flex-col min-w-0 flex-1">
                       <span className="font-semibold text-sm truncate">{user.firstName} {user.lastName}</span>
